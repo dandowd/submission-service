@@ -13,4 +13,10 @@ public class Test : IClassFixture<IntegrationWebApplicationFactory<Program>>
     {
         var client = _factory.CreateClient();
     }
+
+    [Fact]
+    public void It_Should_Start()
+    {
+        Setup();
+    }
 }
