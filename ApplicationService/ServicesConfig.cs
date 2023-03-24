@@ -1,4 +1,6 @@
-﻿namespace ApplicationService;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+
+namespace ApplicationService;
 
 public static class ServicesConfig
 {
@@ -12,10 +14,16 @@ public static class ServicesConfig
         services.AddDistributedMemoryCache();
         services.AddSession(options =>
         {
-            options.IdleTimeout = TimeSpan.FromMinutes(30);
+            options.IdleTimeout = TimeSpan.FromDays(15);
             options.Cookie.IsEssential = true;
             options.Cookie.HttpOnly = true;
         });
-        services.AddAuthentication();
+
+        services
+            .AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddCookie();
     }
 }

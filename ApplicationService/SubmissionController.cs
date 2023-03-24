@@ -1,5 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace ApplicationService;
 
@@ -26,24 +30,47 @@ public class SubmissionController : ControllerBase
     }
 
     [HttpPost("start")]
+    [AllowAnonymous]
     public async Task<IActionResult> Start()
     {
+        var userId = new Guid().ToString();
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(ClaimTypes.Role, "Applicant")
+        };
+
+        var identity = new ClaimsIdentity(
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
+        var principal = new ClaimsPrincipal(identity);
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
         var submission = new SubmissionEntity
         {
             Id = Guid.NewGuid(),
+            UserId = userId,
             Status = SubmissionStatus.InProgress,
             CreatedDate = DateTime.Now
         };
 
         await _submissionRepo.Add(submission);
-
         return Ok();
     }
 
     [HttpPatch("update")]
     public async Task<IActionResult> Update([FromBody] SubmissionModel submission)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
         var submissionEntity = _mapper.Map<SubmissionEntity>(submission);
+
         await _submissionRepo.Update(submissionEntity);
 
         return Ok();
