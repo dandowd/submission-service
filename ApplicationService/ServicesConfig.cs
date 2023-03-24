@@ -7,6 +7,8 @@ public static class ServicesConfig
         services.AddControllers();
         services.AddAutoMapper(typeof(MapperProfile).Assembly);
         services.AddScoped<IRepository<SubmissionEntity>, SubmissionRepository>();
+        services.AddScoped<IPublish, Publisher>();
+
         services.AddDistributedMemoryCache();
         services.AddSession(options =>
         {
