@@ -9,14 +9,41 @@ public class Test : IClassFixture<IntegrationWebApplicationFactory<Program>>
         _factory = factory;
     }
 
-    private void Setup()
+    public HttpResponseMessage SetupSession(HttpClient client)
     {
-        var client = _factory.CreateClient();
+        var response = client
+            .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/start"))
+            .Result.EnsureSuccessStatusCode();
+
+        return response;
     }
 
     [Fact]
-    public void It_Should_Start()
+    public void Post_StartShouldCreateNewSubmissionUsingSessionAuth()
     {
-        Setup();
+        var client = _factory.CreateClient();
+
+        var response = client
+            .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/start"))
+            .Result.EnsureSuccessStatusCode();
+
+        Assert.NotNull(response.Headers.GetValues("Set-Cookie").FirstOrDefault());
+    }
+
+    [Fact]
+    void Post_UpdateShouldUpdateCreatedSubmission()
+    {
+        var client = _factory.CreateClient();
+        var sessionResponse = SetupSession(client);
+        var sessionCookie = sessionResponse.Headers.GetValues("Set-Cookie").FirstOrDefault();
+
+        Assert.NotNull(sessionCookie);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/submission/update");
+        request.Headers.Add("Cookie", sessionCookie);
+
+        var response = client.SendAsync(request);
+
+        response.Result.EnsureSuccessStatusCode();
     }
 }
