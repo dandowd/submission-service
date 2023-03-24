@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 
 namespace ApplicationService;
 
-[ApiController]
 [Route("api/[controller]")]
+[ApiController]
 public class SubmissionController : ControllerBase
 {
     private readonly ILogger<SubmissionController> _logger;
@@ -27,7 +25,7 @@ public class SubmissionController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost]
+    [HttpPost("start")]
     public async Task<IActionResult> Start()
     {
         var submission = new SubmissionEntity
@@ -42,7 +40,7 @@ public class SubmissionController : ControllerBase
         return Ok();
     }
 
-    [HttpPatch]
+    [HttpPatch("update")]
     public async Task<IActionResult> Update([FromBody] SubmissionModel submission)
     {
         var submissionEntity = _mapper.Map<SubmissionEntity>(submission);
@@ -51,7 +49,7 @@ public class SubmissionController : ControllerBase
         return Ok();
     }
 
-    [HttpPost]
+    [HttpPost("complete")]
     public async Task<IActionResult> Complete()
     {
         var submission = await _submissionRepo.GetById(
