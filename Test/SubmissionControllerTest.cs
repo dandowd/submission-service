@@ -19,6 +19,10 @@ public class SubmissionControllerTest
     private SubmissionController BuildController()
     {
         _mockRepo.Setup(repo => repo.Add(It.IsAny<SubmissionEntity>())).Verifiable();
+        _mockSessionManager.Setup(manager => manager.GetUserId()).Returns("1234");
+        _mockRepo
+            .Setup(repo => repo.GetById(It.IsAny<string>()))
+            .ReturnsAsync(new SubmissionEntity { Id = "1234" });
 
         return new SubmissionController(
             submissionRepo: _mockRepo.Object,
