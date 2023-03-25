@@ -13,16 +13,19 @@ public class SubmissionController : ControllerBase
 {
     private readonly ILogger<SubmissionController> _logger;
     private readonly IRepository<SubmissionEntity> _submissionRepo;
+    private readonly IUserManager _userManager;
     private readonly IPublish _publisher;
     private readonly IMapper _mapper;
 
     public SubmissionController(
         IRepository<SubmissionEntity> submissionRepo,
+        IUserManager userManager,
         IMapper mapper,
         IPublish publisher,
         ILogger<SubmissionController> logger
     )
     {
+        _userManager = userManager;
         _publisher = publisher;
         _mapper = mapper;
         _submissionRepo = submissionRepo;
@@ -33,24 +36,10 @@ public class SubmissionController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Start()
     {
-        var userId = new Guid().ToString();
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, userId),
-            new Claim(ClaimTypes.Role, "Applicant")
-        };
+        var userId = await _userManager.Create();
 
-        var identity = new ClaimsIdentity(
-            claims,
-            CookieAuthenticationDefaults.AuthenticationScheme
-        );
-        var principal = new ClaimsPrincipal(identity);
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-
-        var submission = new SubmissionEntity
+        var submission = new SubmissionEntity(userId)
         {
-            Id = Guid.NewGuid(),
-            UserId = userId,
             Status = SubmissionStatus.InProgress,
             CreatedDate = DateTime.Now
         };
@@ -60,16 +49,13 @@ public class SubmissionController : ControllerBase
     }
 
     [HttpPatch("update")]
+    [Authorize]
     public async Task<IActionResult> Update([FromBody] SubmissionModel submission)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var submissionId = _userManager.GetUserId();
 
-        if (userId == null)
-        {
-            return Unauthorized();
-        }
-
-        var submissionEntity = _mapper.Map<SubmissionEntity>(submission);
+        var submissionEntity = new SubmissionEntity(submissionId);
+        _mapper.Map(submission, submissionEntity);
 
         await _submissionRepo.Update(submissionEntity);
 
@@ -77,11 +63,12 @@ public class SubmissionController : ControllerBase
     }
 
     [HttpPost("complete")]
+    [Authorize]
     public async Task<IActionResult> Complete()
     {
-        var submission = await _submissionRepo.GetById(
-            new Guid("1c5b1b1a-1b1a-1b1a-1b1a-1b1a1b1a1b1a")
-        );
+        var submissionId = _userManager.GetUserId();
+
+        var submission = await _submissionRepo.GetById(submissionId);
         submission.Status = SubmissionStatus.Completed;
         submission.CompletedDate = DateTime.Now;
 

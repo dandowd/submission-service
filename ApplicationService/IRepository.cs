@@ -5,5 +5,5 @@ public interface IRepository<T>
 {
     Task Add(T entity);
     Task Update(T entity);
-    Task<T> GetById(Guid id);
+    Task<T> GetById(string id);
 }

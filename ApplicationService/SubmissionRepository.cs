@@ -17,7 +17,7 @@ public class SubmissionRepository : IRepository<SubmissionEntity>
         throw new NotImplementedException();
     }
 
-    public Task<SubmissionEntity> GetById(Guid id)
+    public Task<SubmissionEntity> GetById(string id)
     {
         throw new NotImplementedException();
     }
