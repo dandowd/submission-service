@@ -1,4 +1,7 @@
-﻿namespace IntegrationTest;
+﻿using System.Net;
+using System.Net.Http.Headers;
+
+namespace IntegrationTest;
 
 public class Test : IClassFixture<IntegrationWebApplicationFactory<Program>>
 {
@@ -31,7 +34,7 @@ public class Test : IClassFixture<IntegrationWebApplicationFactory<Program>>
     }
 
     [Fact]
-    void Post_UpdateShouldUpdateCreatedSubmission()
+    void Patch_UpdateShouldUpdateCreatedSubmission()
     {
         var client = _factory.CreateClient();
         var sessionResponse = SetupSession(client);
@@ -39,11 +42,32 @@ public class Test : IClassFixture<IntegrationWebApplicationFactory<Program>>
 
         Assert.NotNull(sessionCookie);
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/submission/update");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/submission/update");
         request.Headers.Add("Cookie", sessionCookie);
+        request.Content = new StringContent(
+            "{\"firstname\":\"test\"}",
+            new MediaTypeHeaderValue("application/json")
+        );
 
         var response = client.SendAsync(request);
 
         response.Result.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    void Patch_UpdateShouldFailWithInvalidCookie()
+    {
+        var client = _factory.CreateClient();
+
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/submission/update");
+        request.Headers.Add("Cookie", "session=invalid");
+        request.Content = new StringContent(
+            "{\"firstname\":\"test\"}",
+            new MediaTypeHeaderValue("application/json")
+        );
+
+        var response = client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.Result.StatusCode);
     }
 }
