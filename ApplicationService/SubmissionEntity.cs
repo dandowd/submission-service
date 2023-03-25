@@ -1,5 +1,8 @@
-﻿namespace ApplicationService;
+﻿using Amazon.DynamoDBv2.DataModel;
 
+namespace ApplicationService;
+
+[DynamoDBTable("Submissions")]
 public class SubmissionEntity
 {
     public SubmissionEntity(string id)

@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 
 namespace ApplicationService;
 
@@ -12,6 +14,13 @@ public static class ServicesConfig
         services.AddScoped<IUserManager, UserManager>();
         services.AddScoped<IPublish, Publisher>();
         services.AddHttpContextAccessor();
+
+        // Add DynamoDB context
+        services.AddSingleton<IAmazonDynamoDB>(provider =>
+        {
+            return new AmazonDynamoDBClient();
+        });
+        services.AddScoped<IDynamoDBContext, DynamoDBContext>();
 
         services.AddDistributedMemoryCache();
         services.AddSession(options =>
