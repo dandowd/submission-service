@@ -6,9 +6,9 @@ namespace ApplicationService;
 
 public class UserManager : IUserManager
 {
-    private readonly HttpContextAccessor _httpContextAccessor;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public UserManager(HttpContextAccessor httpContextAccessor)
+    public UserManager(IHttpContextAccessor httpContextAccessor)
     {
         _httpContextAccessor = httpContextAccessor;
     }
