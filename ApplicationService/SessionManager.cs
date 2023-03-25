@@ -4,21 +4,21 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace ApplicationService;
 
-public class UserManager : IUserManager
+public class SessionManager : ISessionManager
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public UserManager(IHttpContextAccessor httpContextAccessor)
+    public SessionManager(IHttpContextAccessor httpContextAccessor)
     {
         _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<string> Create()
     {
-        var submissionId = Guid.NewGuid().ToString();
+        var sessionId = Guid.NewGuid().ToString();
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.Name, submissionId),
+            new Claim(ClaimTypes.Name, sessionId),
             new Claim(ClaimTypes.Role, "Applicant"),
         };
 
@@ -38,18 +38,18 @@ public class UserManager : IUserManager
             principal
         );
 
-        return submissionId;
+        return sessionId;
     }
 
     public string GetUserId()
     {
-        var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
+        var sessionId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
 
-        if (userId == null)
+        if (sessionId == null)
         {
             throw new Exception("User is not authenticated");
         }
 
-        return userId;
+        return sessionId;
     }
 }

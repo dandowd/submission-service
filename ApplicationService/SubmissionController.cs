@@ -10,19 +10,19 @@ public class SubmissionController : ControllerBase
 {
     private readonly ILogger<SubmissionController> _logger;
     private readonly IRepository<SubmissionEntity> _submissionRepo;
-    private readonly IUserManager _userManager;
+    private readonly ISessionManager _sessionManager;
     private readonly IPublish _publisher;
     private readonly IMapper _mapper;
 
     public SubmissionController(
         IRepository<SubmissionEntity> submissionRepo,
-        IUserManager userManager,
+        ISessionManager sessionManager,
         IMapper mapper,
         IPublish publisher,
         ILogger<SubmissionController> logger
     )
     {
-        _userManager = userManager;
+        _sessionManager = sessionManager;
         _publisher = publisher;
         _mapper = mapper;
         _submissionRepo = submissionRepo;
@@ -33,15 +33,17 @@ public class SubmissionController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Start()
     {
-        var userId = await _userManager.Create();
+        var userId = await _sessionManager.Create();
 
-        var submission = new SubmissionEntity(userId)
+        var submission = new SubmissionEntity
         {
+            Id = userId,
             Status = SubmissionStatus.InProgress,
             CreatedDate = DateTime.Now
         };
 
         await _submissionRepo.Add(submission);
+
         return Ok();
     }
 
@@ -49,10 +51,10 @@ public class SubmissionController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Update([FromBody] SubmissionModel submission)
     {
-        var submissionId = _userManager.GetUserId();
+        var submissionId = _sessionManager.GetUserId();
 
-        var submissionEntity = new SubmissionEntity(submissionId);
-        _mapper.Map(submission, submissionEntity);
+        var submissionEntity = _mapper.Map<SubmissionEntity>(submission);
+        submissionEntity.Id = submissionId;
 
         await _submissionRepo.Update(submissionEntity);
 
@@ -63,7 +65,7 @@ public class SubmissionController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Complete()
     {
-        var submissionId = _userManager.GetUserId();
+        var submissionId = _sessionManager.GetUserId();
 
         var submission = await _submissionRepo.GetById(submissionId);
         submission.Status = SubmissionStatus.Completed;

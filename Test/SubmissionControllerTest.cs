@@ -14,7 +14,7 @@ public class SubmissionControllerTest
     IMapper _mapper = new MapperConfiguration(
         cfg => cfg.AddProfile(new MapperProfile())
     ).CreateMapper();
-    Mock<IUserManager> _mockUserManager = new Mock<IUserManager>();
+    Mock<ISessionManager> _mockSessionManager = new Mock<ISessionManager>();
 
     private SubmissionController BuildController()
     {
@@ -22,7 +22,7 @@ public class SubmissionControllerTest
 
         return new SubmissionController(
             submissionRepo: _mockRepo.Object,
-            userManager: _mockUserManager.Object,
+            sessionManager: _mockSessionManager.Object,
             mapper: _mapper,
             logger: _mockLogger.Object,
             publisher: _mockPublish.Object

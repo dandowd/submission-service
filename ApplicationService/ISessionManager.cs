@@ -1,6 +1,6 @@
 ﻿namespace ApplicationService;
 
-public interface IUserManager
+public interface ISessionManager
 {
     string GetUserId();
     Task<string> Create();
