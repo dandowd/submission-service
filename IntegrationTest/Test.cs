@@ -3,22 +3,34 @@ using System.Net.Http.Headers;
 
 namespace IntegrationTest;
 
-public class Test : IClassFixture<IntegrationWebApplicationFactory<Program>>
+public class Test
+    : IClassFixture<IntegrationWebApplicationFactory<Program>>,
+        IClassFixture<DbContainer>
 {
     private readonly IntegrationWebApplicationFactory<Program> _factory;
+    private readonly DbContainer _dbConnection;
 
-    public Test(IntegrationWebApplicationFactory<Program> factory)
+    public Test(IntegrationWebApplicationFactory<Program> factory, DbContainer dbConnection)
     {
         _factory = factory;
+        _dbConnection = dbConnection;
     }
 
     public HttpResponseMessage SetupSession(HttpClient client)
     {
-        var response = client
-            .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/start"))
-            .Result.EnsureSuccessStatusCode();
+        try
+        {
+            var response = client
+                .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/start"))
+                .Result.EnsureSuccessStatusCode();
 
-        return response;
+            return response;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     [Fact]
