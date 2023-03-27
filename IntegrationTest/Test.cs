@@ -18,19 +18,11 @@ public class Test
 
     public HttpResponseMessage SetupSession(HttpClient client)
     {
-        try
-        {
-            var response = client
-                .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/start"))
-                .Result.EnsureSuccessStatusCode();
+        var response = client
+            .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/start"))
+            .Result.EnsureSuccessStatusCode();
 
-            return response;
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
+        return response;
     }
 
     [Fact]
