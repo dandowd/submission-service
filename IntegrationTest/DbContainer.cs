@@ -8,7 +8,7 @@ namespace IntegrationTest;
 
 public class DbContainer : IAsyncLifetime
 {
-    private string _containerId = "";
+    private string _containerId = String.Empty;
 
     private async Task CreateTable()
     {
