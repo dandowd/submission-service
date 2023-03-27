@@ -1,6 +1,4 @@
-﻿using Amazon.DynamoDBv2;
-using Amazon.DynamoDBv2.Model;
-using Amazon.Runtime;
+﻿using Amazon.DynamoDBv2.Model;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 
@@ -14,13 +12,7 @@ public class DbContainer : IAsyncLifetime
     {
         const string tableName = "Submissions";
 
-        var config = new AmazonDynamoDBConfig
-        {
-            ServiceURL = "http://localhost:8000",
-            UseHttp = true
-        };
-        var creds = new BasicAWSCredentials("access_key_id", "secret_key");
-        var client = new AmazonDynamoDBClient(creds, config);
+        var client = new IntegrationDbClient();
 
         await client.CreateTableAsync(
             new CreateTableRequest
