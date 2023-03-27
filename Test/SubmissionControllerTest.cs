@@ -54,6 +54,7 @@ public class SubmissionControllerTest
     public async Task Update_Should_Return_Ok()
     {
         ResetMocks();
+
         var controller = BuildController();
 
         var submission = new SubmissionModel { FirstName = "John", LastName = "Doe", };
@@ -73,6 +74,7 @@ public class SubmissionControllerTest
     public async Task Complete_Should_Return_Ok()
     {
         ResetMocks();
+
         var controller = BuildController();
 
         var result = await controller.Complete();

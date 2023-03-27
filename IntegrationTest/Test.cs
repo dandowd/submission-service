@@ -1,5 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
+using ApplicationService;
+using Newtonsoft.Json;
 
 namespace IntegrationTest;
 
@@ -8,18 +10,18 @@ public class Test
         IClassFixture<DbContainer>
 {
     private readonly IntegrationWebApplicationFactory<Program> _factory;
-    private readonly DbContainer _dbConnection;
+    private readonly DbContainer _dbContainer;
 
-    public Test(IntegrationWebApplicationFactory<Program> factory, DbContainer dbConnection)
+    public Test(IntegrationWebApplicationFactory<Program> factory, DbContainer dbContainer)
     {
         _factory = factory;
-        _dbConnection = dbConnection;
+        _dbContainer = dbContainer;
     }
 
     public HttpResponseMessage SetupSession(HttpClient client)
     {
         var response = client
-            .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/start"))
+            .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/"))
             .Result.EnsureSuccessStatusCode();
 
         return response;
@@ -31,14 +33,14 @@ public class Test
         var client = _factory.CreateClient();
 
         var response = client
-            .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/start"))
+            .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/"))
             .Result.EnsureSuccessStatusCode();
 
         Assert.NotNull(response.Headers.GetValues("Set-Cookie").FirstOrDefault());
     }
 
     [Fact]
-    void Patch_UpdateShouldUpdateCreatedSubmission()
+    async Task Patch_UpdateShouldUpdateCreatedSubmission()
     {
         var client = _factory.CreateClient();
         var sessionResponse = SetupSession(client);
@@ -46,7 +48,7 @@ public class Test
 
         Assert.NotNull(sessionCookie);
 
-        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/submission/update");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/submission/");
         request.Headers.Add("Cookie", sessionCookie);
         request.Content = new StringContent(
             "{\"firstname\":\"test\"}",
@@ -56,6 +58,19 @@ public class Test
         var response = client.SendAsync(request);
 
         response.Result.EnsureSuccessStatusCode();
+
+        // Check if the submission was updated
+        var getRequest = new HttpRequestMessage(HttpMethod.Get, "/api/submission/");
+        getRequest.Headers.Add("Cookie", sessionCookie);
+
+        var getResponse = client.SendAsync(getRequest);
+
+        getResponse.Result.EnsureSuccessStatusCode();
+        var responseContent = await getResponse.Result.Content.ReadAsStringAsync();
+
+        var submission = JsonConvert.DeserializeObject<SubmissionModel>(responseContent);
+
+        Assert.Equal("test", submission?.FirstName);
     }
 
     [Fact]
@@ -63,7 +78,7 @@ public class Test
     {
         var client = _factory.CreateClient();
 
-        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/submission/update");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/submission/");
         request.Headers.Add("Cookie", "session=invalid");
         request.Content = new StringContent(
             "{\"firstname\":\"test\"}",

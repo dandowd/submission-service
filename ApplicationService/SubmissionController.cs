@@ -29,7 +29,7 @@ public class SubmissionController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost("start")]
+    [HttpPost]
     [AllowAnonymous]
     public async Task<IActionResult> Start()
     {
@@ -47,7 +47,17 @@ public class SubmissionController : ControllerBase
         return Ok();
     }
 
-    [HttpPatch("update")]
+    [HttpGet]
+    [Authorize]
+    public async Task<SubmissionModel> Continue()
+    {
+        var userId = _sessionManager.GetUserId();
+        var submission = await _submissionRepo.GetById(userId);
+
+        return _mapper.Map<SubmissionModel>(submission);
+    }
+
+    [HttpPatch]
     [Authorize]
     public async Task<IActionResult> Update([FromBody] SubmissionModel submission)
     {
