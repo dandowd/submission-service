@@ -27,50 +27,84 @@ public class Test
         return response;
     }
 
-    [Fact]
-    public void Post_StartShouldCreateNewSubmissionUsingSessionAuth()
+    public Func<HttpMethod, string, string, HttpRequestMessage> RequestBuilder(HttpClient client)
     {
-        var client = _factory.CreateClient();
-
+        // Setup session cookie
         var response = client
             .SendAsync(new HttpRequestMessage(HttpMethod.Post, "/api/submission/"))
             .Result.EnsureSuccessStatusCode();
 
-        Assert.NotNull(response.Headers.GetValues("Set-Cookie").FirstOrDefault());
+        var sessionCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault();
+
+        return (HttpMethod method, string endpoint, string jsonContent) =>
+        {
+            var request = new HttpRequestMessage(method, endpoint);
+            request.Headers.Add("Cookie", sessionCookie);
+            request.Content = new StringContent(
+                jsonContent,
+                new MediaTypeHeaderValue("application/json")
+            );
+
+            return request;
+        };
+    }
+
+    [Fact]
+    public void Post_StartShouldCreateNewSubmissionUsingSessionAuth()
+    {
+        var client = _factory.CreateClient();
+        var builder = RequestBuilder(client);
+
+        var response = builder(HttpMethod.Post, "/api/submission/", String.Empty);
+
+        Assert.NotNull(response.Headers.GetValues("Cookie").FirstOrDefault());
     }
 
     [Fact]
     async Task Patch_UpdateShouldUpdateCreatedSubmission()
     {
         var client = _factory.CreateClient();
-        var sessionResponse = SetupSession(client);
-        var sessionCookie = sessionResponse.Headers.GetValues("Set-Cookie").FirstOrDefault();
+        var builder = RequestBuilder(client);
 
-        Assert.NotNull(sessionCookie);
+        var request = builder(HttpMethod.Patch, "/api/submission/", "{\"firstname\":\"test\"}");
 
-        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/submission/");
-        request.Headers.Add("Cookie", sessionCookie);
-        request.Content = new StringContent(
-            "{\"firstname\":\"test\"}",
-            new MediaTypeHeaderValue("application/json")
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    async Task Patch_ShouldUpdateWithoutRemovingExistingFields()
+    {
+        var client = _factory.CreateClient();
+        var builder = RequestBuilder(client);
+
+        var firstRequest = builder(
+            HttpMethod.Patch,
+            "/api/submission/",
+            "{\"firstname\":\"first\"}"
         );
 
-        var response = client.SendAsync(request);
+        await client.SendAsync(firstRequest);
 
-        response.Result.EnsureSuccessStatusCode();
+        var secondRequest = builder(
+            HttpMethod.Patch,
+            "/api/submission/",
+            "{\"lastname\":\"last\"}"
+        );
 
-        // Check if the submission was updated
-        var getRequest = new HttpRequestMessage(HttpMethod.Get, "/api/submission/");
-        getRequest.Headers.Add("Cookie", sessionCookie);
+        var response = await client.SendAsync(secondRequest);
 
-        var getResponse = client.SendAsync(getRequest);
+        var get = builder(HttpMethod.Get, "/api/submission/", String.Empty);
+        var getResponse = await client.SendAsync(get);
 
-        getResponse.Result.EnsureSuccessStatusCode();
-        var responseContent = await getResponse.Result.Content.ReadAsStringAsync();
+        var submission = JsonConvert.DeserializeObject<SubmissionModel>(
+            await getResponse.Content.ReadAsStringAsync()
+        );
 
-        var submission = JsonConvert.DeserializeObject<SubmissionModel>(responseContent);
-
-        Assert.Equal("test", submission?.FirstName);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("first", submission?.FirstName);
+        Assert.Equal("last", submission?.LastName);
     }
 
     [Fact]
