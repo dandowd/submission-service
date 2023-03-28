@@ -37,6 +37,11 @@ public class DbContainer : IAsyncLifetime
 
     private async Task CreateContainer()
     {
+        if (!String.IsNullOrEmpty(_containerId))
+        {
+            return;
+        }
+
         var config = new HostConfig
         {
             PortBindings = new Dictionary<string, IList<PortBinding>>
@@ -60,18 +65,26 @@ public class DbContainer : IAsyncLifetime
             Cmd = new List<string> { "-jar", "DynamoDBLocal.jar", "-inMemory" }
         };
 
-        var dockerClient = new DockerClientConfiguration().CreateClient();
+        try
+        {
+            var dockerClient = new DockerClientConfiguration().CreateClient();
 
-        var response = await dockerClient.Containers.CreateContainerAsync(
-            createContainerParameters
-        );
+            var response = await dockerClient.Containers.CreateContainerAsync(
+                createContainerParameters
+            );
 
-        _containerId = response.ID;
+            _containerId = response.ID;
 
-        await dockerClient.Containers.StartContainerAsync(
-            response.ID,
-            new ContainerStartParameters()
-        );
+            await dockerClient.Containers.StartContainerAsync(
+                response.ID,
+                new ContainerStartParameters()
+            );
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Could not create container, ensure Docker is running.");
+            throw e;
+        }
     }
 
     public async Task InitializeAsync()
@@ -82,6 +95,11 @@ public class DbContainer : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
+        if (String.IsNullOrEmpty(_containerId))
+        {
+            return;
+        }
+
         var dockerClient = new DockerClientConfiguration().CreateClient();
 
         await dockerClient.Containers.StopContainerAsync(
