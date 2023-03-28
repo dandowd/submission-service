@@ -2,8 +2,6 @@
 
 public class Publisher : IPublish
 {
-    public void Publish(SubmissionEntity message)
-    {
-        throw new NotImplementedException();
-    }
+    // TODO: Implement the Publish method to notify other services of the completed application
+    public void Publish(SubmissionEntity message) { }
 }
